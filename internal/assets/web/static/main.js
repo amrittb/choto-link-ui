@@ -4,6 +4,7 @@ function formHandler() {
     shortUrl: "",
     error: "",
     isLoading: false,
+    copied: false,
     async submitForm() {
       this.isLoading = true;
       this.error = "";
@@ -42,17 +43,10 @@ function formHandler() {
     async copyToClipboard() {
       try {
         await navigator.clipboard.writeText(this.shortUrl);
-        // You could add a temporary success message here
-        const button = event.target;
-        const originalText = button.textContent;
-        button.textContent = 'Copied!';
-        button.classList.remove('bg-green-500', 'hover:bg-green-600');
-        button.classList.add('bg-green-600');
+        this.copied = true;
         
         setTimeout(() => {
-          button.textContent = originalText;
-          button.classList.remove('bg-green-600');
-          button.classList.add('bg-green-500', 'hover:bg-green-600');
+          this.copied = false;
         }, 2000);
       } catch (err) {
         // Fallback for older browsers
@@ -62,6 +56,11 @@ function formHandler() {
         textArea.select();
         document.execCommand('copy');
         document.body.removeChild(textArea);
+        
+        this.copied = true;
+        setTimeout(() => {
+          this.copied = false;
+        }, 1000);
       }
     },
     
