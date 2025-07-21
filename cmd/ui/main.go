@@ -1,10 +1,10 @@
 package main
 
 import (
+	"errors"
 	"html/template"
 	"net/http"
 	"net/url"
-	"regexp"
 	"strings"
 
 	"github.com/amrittb/choto-link-ui/internal/assets"
@@ -15,32 +15,54 @@ type CreateChotoReq struct {
 	LongUrl string `json:"longUrl" binding:"required"`
 }
 
-// isValidDomain checks if the URL has at least a second-level domain and TLD
-func isValidDomain(urlStr string) bool {
-	// Remove scheme if present for domain validation
-	cleanUrl := strings.TrimPrefix(strings.TrimPrefix(urlStr, "http://"), "https://")
-	
-	// Remove path, query, and fragment
-	if idx := strings.Index(cleanUrl, "/"); idx != -1 {
-		cleanUrl = cleanUrl[:idx]
+func sanitizeAndValidate(input string) (string, error) {
+	longUrl := strings.TrimSpace(input)
+	if longUrl == "" {
+		return "", errors.New("lamo link is empty")
 	}
-	if idx := strings.Index(cleanUrl, "?"); idx != -1 {
-		cleanUrl = cleanUrl[:idx]
-	}
-	if idx := strings.Index(cleanUrl, "#"); idx != -1 {
-		cleanUrl = cleanUrl[:idx]
-	}
-	
-	// Remove port if present
-	if idx := strings.LastIndex(cleanUrl, ":"); idx != -1 {
-		if portPart := cleanUrl[idx+1:]; regexp.MustCompile(`^\d+$`).MatchString(portPart) {
-			cleanUrl = cleanUrl[:idx]
+
+	if !strings.HasPrefix(longUrl, "http://") && !strings.HasPrefix(longUrl, "https://") {
+		if !strings.Contains(longUrl, ".") || strings.Contains(longUrl, " ") {
+			return "", errors.New("lamo link is invalid")
 		}
+		longUrl = "http://" + longUrl
 	}
-	
-	// Check for valid domain format: at least one dot and valid characters
-	domainRegex := regexp.MustCompile(`^[a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?\.[a-zA-Z]{2,}(\.[a-zA-Z]{2,})*$`)
-	return domainRegex.MatchString(cleanUrl)
+
+	parsedUrl, err := url.Parse(longUrl)
+	if err != nil {
+		return "", errors.New("lamo link is invalid")
+	}
+
+	if parsedUrl.Scheme != "http" && parsedUrl.Scheme != "https" {
+		return "", errors.New("lamo link must use http or https")
+	}
+
+	if parsedUrl.Host == "" {
+		return "", errors.New("lamo link is invalid")
+	}
+
+	host := strings.ToLower(parsedUrl.Host)
+	if host == "localhost" || host == "127.0.0.1" || host == "0.0.0.0" {
+		return "", errors.New("lamo link is invalid")
+	}
+
+	if host == "choto.link" || strings.HasSuffix(host, ".choto.link") {
+		return "", errors.New("cannot shorten choto.link URLs")
+	}
+
+	if !strings.Contains(parsedUrl.Host, ".") {
+		return "", errors.New("lamo link is invalid")
+	}
+
+	parsedUrl.Fragment = ""
+	normalizedUrl := parsedUrl.String()
+
+	_, err = url.ParseRequestURI(normalizedUrl)
+	if err != nil {
+		return "", errors.New("lamo link is invalid")
+	}
+
+	return normalizedUrl, nil
 }
 
 func main() {
@@ -71,24 +93,16 @@ func main() {
 			return
 		}
 
-		longUrl := strings.Trim(json.LongUrl, " ")
-		if longUrl == "" {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"error": "Empty Long Url.",
-			})
-			return
-		}
-
-		_, err = url.ParseRequestURI(longUrl)
+		sanitizedUrl, err := sanitizeAndValidate(json.LongUrl)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{
-				"error": "Invalid Long Url.",
+				"error": err.Error(),
 			})
 			return
 		}
 
 		c.JSON(http.StatusCreated, gin.H{
-			"shortUrl": longUrl,
+			"shortUrl": sanitizedUrl,
 		})
 	})
 

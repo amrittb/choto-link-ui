@@ -3,12 +3,15 @@ function formHandler() {
     inputText: "",
     shortUrl: "",
     error: "",
+    isLoading: false,
     async submitForm() {
+      this.isLoading = true;
       this.error = "";
       this.shortUrl = "";
       
       if (!this.inputText.trim()) {
         this.error = "Please enter a valid URL";
+        this.isLoading = false;
         return;
       }
       
@@ -31,6 +34,8 @@ function formHandler() {
         this.shortUrl = data.shortUrl || data.url || `https://choto.link/${data.id || 'abc123'}`;
       } catch (err) {
         this.error = err.message || "Something went wrong. Please try again.";
+      } finally {
+        this.isLoading = false;
       }
     },
     
