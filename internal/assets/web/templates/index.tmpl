@@ -1,15 +1,78 @@
 <html>
 
 <head>
+	<script src="https://cdn.tailwindcss.com"></script>
 	<link rel="stylesheet" href="/static/main.css">
+
+	<script src="/static/main.js"></script>
+	<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
 
-<body>
-<h1>
-	{{ .title }}
-</h1>
+<body
+	class="min-h-screen bg-gradient-to-br from-purple-500 via-purple-600 to-indigo-700 flex items-center justify-center p-4 relative overflow-hidden">
+	<div class="w-full max-w-md relative z-10">
+		<!-- Main Title -->
+		<a href="/" class="block text-center mb-8">
+			<h1 class="text-white text-2xl font-bold hover:text-gray-200 transition-colors cursor-pointer">choto.link
+			</h1>
+		</a>
 
-<script src="/static/main.js"></script>
+		<!-- Card Container -->
+		<div class="bg-white rounded-3xl p-8 shadow-2xl">
+			<div x-data="formHandler()">
+				<!-- Section Title -->
+				<h2 class="text-gray-800 text-xl font-semibold mb-2 text-center">Link choto banaunuhos</h2>
+				<p class="text-gray-400 text-sm mb-4 text-center">choto link share garna sajilo</p>
 
+				<!-- Error Messages -->
+				<div class="mb-2 text-red-500 text-center text-sm h-5 flex items-center justify-center">
+					<span :style="error ? 'visibility: visible;' : 'visibility: hidden;'" x-text="error"></span>
+				</div>
+
+				<!-- Form Section -->
+				<div x-show="!shortUrl">
+					<form @submit.prevent="submitForm" class="space-y-6">
+						<!-- Input Field -->
+						<div>
+							<input type="text" id="longUrl" x-model="inputText"
+								class="w-full px-4 py-4 bg-gray-50 border border-gray-200 rounded-full text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+								placeholder="Lamo Link eta..." required />
+						</div>
+
+						<!-- Submit Button -->
+						<div class="flex justify-center">
+							<button type="submit"
+								class="px-8 py-3 bg-gradient-to-r from-purple-500 to-indigo-600 text-white rounded-full hover:from-purple-600 hover:to-indigo-700 transition-all duration-200 font-medium shadow-lg">
+								Choto Banau
+							</button>
+						</div>
+					</form>
+				</div>
+
+				<!-- Result Section -->
+				<div x-show="shortUrl" x-cloak class="space-y-4">
+					<div class="text-center">
+						<p class="text-gray-600 text-sm mb-3">Hajur ko choto link</p>
+						<div class="flex items-center justify-between bg-gray-50 rounded-full p-3 border">
+							<span class="text-blue-600 font-mono text-sm flex-1 truncate" x-text="shortUrl"></span>
+							<button @click="copyToClipboard()"
+								class="ml-3 px-3 py-1 bg-green-500 text-white text-xs rounded-md hover:bg-green-600 transition-colors">
+								Copy
+							</button>
+						</div>
+					</div>
+
+					<!-- Create Another Link Button -->
+					<div class="flex justify-center pt-4">
+						<button @click="resetForm()"
+							class="px-6 py-2 text-purple-600 border border-purple-600 rounded-full hover:bg-purple-50 transition-colors text-sm">
+							Arko Link Banau
+						</button>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
 </body>
+
 </html>
