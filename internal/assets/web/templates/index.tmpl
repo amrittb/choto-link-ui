@@ -1,6 +1,9 @@
 <html>
 
 <head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 	<title>choto.link - URL Shortener</title>
 
 	<link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
@@ -15,43 +18,44 @@
 </head>
 
 <body
-	class="min-h-screen bg-gradient-to-br from-purple-500 via-purple-600 to-indigo-700 flex items-center justify-center p-4 relative overflow-hidden">
-	<div class="w-full max-w-md relative z-10">
-		<!-- Main Title -->
-		<a href="/" class="block text-center mb-8">
-			<h1 class="text-white text-2xl font-bold hover:text-gray-200 transition-colors cursor-pointer">choto.link
+	class="min-h-screen bg-gradient-to-br from-purple-500 via-purple-600 to-indigo-700 flex items-start justify-center pt-20 sm:pt-20 p-4 sm:p-4 relative overflow-hidden">
+	<div class="w-full max-w-lg sm:max-w-xl lg:max-w-2xl relative z-10">
+		<a href="/" class="block text-center mb-8 sm:mb-10">
+			<h1
+				class="text-white text-2xl sm:text-3xl lg:text-4xl font-bold hover:text-gray-200 transition-colors cursor-pointer">
+				choto.link
 			</h1>
 		</a>
 
 		<!-- Card Container -->
-		<div class="bg-white rounded-3xl p-8 shadow-2xl">
+		<div class="bg-white rounded-3xl sm:rounded-3xl p-8 sm:p-10 shadow-2xl">
 			<div x-data="formHandler()">
 				<!-- Section Title -->
-				<h2 class="text-gray-800 text-xl font-semibold mb-2 text-center">Link choto banaunuhos</h2>
-				<p class="text-gray-400 text-sm mb-4 text-center">choto link share garna sajilo</p>
+				<h2 class="text-gray-800 text-xl sm:text-2xl font-semibold mb-4 text-center">Link choto banaunuhos</h2>
+				<p class="text-gray-400 text-sm sm:text-base mb-6 text-center">choto link share garna sajilo</p>
 
 				<!-- Error Messages -->
-				<div class="mb-2 text-red-500 text-center text-sm h-5 flex items-center justify-center">
+				<div class="mb-4 text-red-500 text-center text-sm sm:text-base h-6 flex items-center justify-center">
 					<span :style="error ? 'visibility: visible;' : 'visibility: hidden;'" x-text="error"></span>
 				</div>
 
 				<!-- Form Section -->
 				<div x-show="!shortUrl">
-					<form @submit.prevent="submitForm" class="space-y-6">
+					<form @submit.prevent="submitForm" class="space-y-6 sm:space-y-8">
 						<!-- Input Field -->
 						<div>
 							<input type="text" id="longUrl" x-model="inputText"
-								class="w-full px-4 py-4 bg-gray-50 border border-gray-200 rounded-full text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+								class="w-full px-5 sm:px-6 py-4 sm:py-5 bg-gray-50 border border-gray-200 rounded-full text-base sm:text-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
 								placeholder="Lamo Link eta..." required />
 						</div>
 
 						<!-- Submit Button -->
 						<div class="flex justify-center">
 							<button type="submit" :disabled="isLoading"
-								:class="isLoading ? 'px-8 py-3 bg-gray-400 text-white rounded-full cursor-not-allowed font-medium shadow-lg' : 'px-8 py-3 bg-gradient-to-r from-purple-500 to-indigo-600 text-white rounded-full hover:from-purple-600 hover:to-indigo-700 transition-all duration-200 font-medium shadow-lg'">
+								:class="isLoading ? 'px-8 sm:px-10 py-4 sm:py-4 bg-gray-400 text-white rounded-full cursor-not-allowed font-medium shadow-lg text-base sm:text-lg' : 'px-8 sm:px-10 py-4 sm:py-4 bg-gradient-to-r from-purple-500 to-indigo-600 text-white rounded-full hover:from-purple-600 hover:to-indigo-700 transition-all duration-200 font-medium shadow-lg text-base sm:text-lg'">
 								<span x-show="!isLoading">Choto Banau</span>
 								<span x-show="isLoading" class="flex items-center">
-									<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+									<svg class="animate-spin -ml-1 mr-2 h-4 w-4 sm:h-5 sm:w-5 text-white"
 										xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
 										<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
 											stroke-width="4"></circle>
@@ -67,13 +71,14 @@
 				</div>
 
 				<!-- Result Section -->
-				<div x-show="shortUrl" x-cloak class="space-y-4">
+				<div x-show="shortUrl" x-cloak class="space-y-5 sm:space-y-6">
 					<div class="text-center">
-						<p class="text-gray-600 text-sm mb-3">Hajur ko choto link</p>
-						<div class="flex items-center justify-between bg-gray-50 rounded-full p-3 border">
-							<span class="text-blue-600 font-mono text-sm flex-1 truncate" x-text="shortUrl"></span>
+						<p class="text-gray-600 text-sm sm:text-base mb-4">Hajur ko choto link</p>
+						<div class="flex items-center justify-between bg-gray-50 rounded-full p-4 sm:p-4 border">
+							<span class="text-blue-600 font-mono text-sm sm:text-base flex-1 truncate"
+								x-text="shortUrl"></span>
 							<button @click="copyToClipboard()"
-								:class="copied ? 'ml-3 px-3 py-1 bg-blue-500 text-white text-xs rounded-md transition-colors' : 'ml-3 px-3 py-1 bg-green-500 text-white text-xs rounded-md hover:bg-green-600 transition-colors'">
+								:class="copied ? 'ml-3 sm:ml-4 px-3 sm:px-4 py-2 bg-blue-500 text-white text-sm rounded-lg transition-colors' : 'ml-3 sm:ml-4 px-3 sm:px-4 py-2 bg-green-500 text-white text-sm rounded-lg hover:bg-green-600 transition-colors'">
 								<span x-show="!copied">Copy</span>
 								<span x-show="copied">Copied!</span>
 							</button>
@@ -81,9 +86,9 @@
 					</div>
 
 					<!-- Create Another Link Button -->
-					<div class="flex justify-center pt-4">
+					<div class="flex justify-center pt-4 sm:pt-5">
 						<button @click="resetForm()"
-							class="px-6 py-2 text-purple-600 border border-purple-600 rounded-full hover:bg-purple-50 transition-colors text-sm">
+							class="px-6 sm:px-8 py-3 text-purple-600 border border-purple-600 rounded-full hover:bg-purple-50 transition-colors text-sm sm:text-base">
 							Arko Link Banau
 						</button>
 					</div>
