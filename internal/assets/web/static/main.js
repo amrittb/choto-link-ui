@@ -32,7 +32,7 @@ function formHandler() {
         }
 
         // Assuming the API returns the short URL in data.shortUrl or similar
-        this.shortUrl = data.shortUrl || data.url || `https://choto.link/${data.id || 'abc123'}`;
+        this.shortUrl = `${data.shortUrl}`;
       } catch (err) {
         this.error = err.message || "Something went wrong. Please try again.";
       } finally {

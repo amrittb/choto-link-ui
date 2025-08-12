@@ -1,11 +1,16 @@
 package main
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
 	"html/template"
+	"io"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
+	"time"
 
 	"github.com/amrittb/choto-link-ui/internal/assets"
 	"github.com/gin-gonic/gin"
@@ -71,6 +76,20 @@ func main() {
 
 	router.SetHTMLTemplate(templ)
 
+	// Read backend base URL from environment
+	apiBaseUrl := os.Getenv("API_BASE_URL")
+	if apiBaseUrl == "" {
+		apiBaseUrl = "http://localhost:8081"
+	}
+	apiBaseUrl = strings.TrimRight(apiBaseUrl, "/")
+
+	// Read public Choto domain for building full URLs
+	chotoBaseUrl := os.Getenv("CHOTO_BASE_URL")
+	if chotoBaseUrl == "" {
+		chotoBaseUrl = "http://localhost:8080"
+	}
+	chotoBaseUrl = strings.TrimRight(chotoBaseUrl, "/")
+
 	// Handle Static Files
 	router.GET("/static/*filepath", func(c *gin.Context) {
 		file := c.Param("filepath") // e.g., /main.css
@@ -84,8 +103,8 @@ func main() {
 	})
 
 	router.POST("/create", func(c *gin.Context) {
-		var json CreateChotoReq
-		err := c.ShouldBindJSON(&json)
+		var reqBody CreateChotoReq
+		err := c.ShouldBindJSON(&reqBody)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{
 				"error": "Invalid Request.",
@@ -93,7 +112,7 @@ func main() {
 			return
 		}
 
-		sanitizedUrl, err := sanitizeAndValidate(json.LongUrl)
+		sanitizedUrl, err := sanitizeAndValidate(reqBody.LongUrl)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{
 				"error": err.Error(),
@@ -101,9 +120,97 @@ func main() {
 			return
 		}
 
-		c.JSON(http.StatusCreated, gin.H{
-			"shortUrl": sanitizedUrl,
-		})
+		// Call backend API to create short link
+		backendURL := apiBaseUrl + "/api/v1/choto"
+		payload := []byte("{\"longUrl\":\"" + sanitizedUrl + "\"}")
+		req, err := http.NewRequest(http.MethodPost, backendURL, bytes.NewBuffer(payload))
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to prepare request"})
+			return
+		}
+		req.Header.Set("Content-Type", "application/json")
+
+		client := &http.Client{Timeout: 10 * time.Second}
+		resp, err := client.Do(req)
+		if err != nil {
+			c.JSON(http.StatusBadGateway, gin.H{"error": "failed to reach backend"})
+			return
+		}
+		defer resp.Body.Close()
+
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			c.JSON(http.StatusBadGateway, gin.H{"error": "failed to read backend response"})
+			return
+		}
+
+		// Try to parse backend response and return in desired format
+		var backend map[string]any
+		if err := json.Unmarshal(body, &backend); err != nil {
+			// If parsing fails, just proxy raw
+			c.Data(resp.StatusCode, "application/json", body)
+			return
+		}
+
+		if v, ok := backend["shortUrl"].(string); ok && v != "" {
+			c.JSON(resp.StatusCode, gin.H{
+				"shortUrl": chotoBaseUrl + "/" + v,
+			})
+			return
+		}
+
+		// If the backend did not return shortUrl, proxy as-is
+		c.Data(resp.StatusCode, "application/json", body)
+	})
+
+	router.GET("/:shortUrl", func(c *gin.Context) {
+		shortUrl := c.Param("shortUrl")
+		if shortUrl == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid short url"})
+			return
+		}
+
+		// Call backend to resolve the long URL
+		backendURL := apiBaseUrl + "/api/v1/choto/" + url.PathEscape(shortUrl)
+		req, err := http.NewRequest(http.MethodGet, backendURL, nil)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to prepare request"})
+			return
+		}
+
+		client := &http.Client{Timeout: 10 * time.Second}
+		resp, err := client.Do(req)
+		if err != nil {
+			c.JSON(http.StatusBadGateway, gin.H{"error": "failed to reach backend"})
+			return
+		}
+		defer resp.Body.Close()
+
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			c.JSON(http.StatusBadGateway, gin.H{"error": "failed to read backend response"})
+			return
+		}
+
+		if resp.StatusCode != http.StatusOK {
+			// Proxy backend error status and body
+			c.Data(resp.StatusCode, "application/json", body)
+			return
+		}
+
+		var backend map[string]any
+		if err := json.Unmarshal(body, &backend); err != nil {
+			c.JSON(http.StatusBadGateway, gin.H{"error": "invalid backend response"})
+			return
+		}
+
+		longUrl, ok := backend["longUrl"].(string)
+		if !ok || strings.TrimSpace(longUrl) == "" {
+			c.JSON(http.StatusBadGateway, gin.H{"error": "backend did not return longUrl"})
+			return
+		}
+
+		c.Redirect(http.StatusTemporaryRedirect, longUrl)
 	})
 
 	router.Run()

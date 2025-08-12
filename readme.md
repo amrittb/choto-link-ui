@@ -55,7 +55,7 @@ A modern, responsive URL shortening web application built with Go, Alpine.js, an
 - **Go Modules**: Dependency management
 - **Hot Reload**: Manual restart required
 
-## 🔧 Configuration
+## Configuration
 
 ### Environment Variables
 Currently, the application uses default configurations. Future versions may support:
